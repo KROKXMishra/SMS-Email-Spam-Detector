@@ -23,7 +23,20 @@ except LookupError:
 
 app = Flask(__name__)
 
+# -------------------------
+# Global Variables
+# -------------------------
+
 ps = PorterStemmer()
+
+STOP_WORDS = set(stopwords.words('english'))
+
+history = []
+
+ACCURACY = 97.29
+PRECISION = 99.16
+RECALL = 81.38
+F1_SCORE = 89.39
 
 # -------------------------
 # Load Model Files
@@ -45,7 +58,6 @@ def transform_text(text):
 
     text = text.lower()
 
-    # No punkt / punkt_tab needed
     text = wordpunct_tokenize(text)
 
     y = []
@@ -57,10 +69,8 @@ def transform_text(text):
     text = y[:]
     y.clear()
 
-    stop_words = set(stopwords.words('english'))
-
     for word in text:
-        if word not in stop_words and word not in string.punctuation:
+        if word not in STOP_WORDS and word not in string.punctuation:
             y.append(word)
 
     text = y[:]
@@ -77,12 +87,21 @@ def transform_text(text):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+
+    return render_template(
+        "index.html",
+        accuracy=ACCURACY,
+        precision=PRECISION,
+        recall=RECALL,
+        f1=F1_SCORE,
+        history=history
+    )
 
 @app.route('/predict', methods=['POST'])
 def predict():
 
     try:
+
         message = request.form['message']
 
         word_count = len(message.split())
@@ -99,9 +118,27 @@ def predict():
             2
         )
 
+        msg = message.lower()
+
+        # -------------------------
+        # Spam Category Detection
+        # -------------------------
+
         if result == 1:
 
             prediction = "Spam"
+
+            if any(word in msg for word in ["otp", "bank", "account", "verify"]):
+                category = "🏦 Banking Scam"
+
+            elif any(word in msg for word in ["winner", "won", "lottery", "prize"]):
+                category = "🎁 Lottery Scam"
+
+            elif any(word in msg for word in ["click", "link", "login"]):
+                category = "🎣 Phishing"
+
+            else:
+                category = "📢 Promotional Spam"
 
             advice = [
                 "Do not click suspicious links.",
@@ -115,22 +152,50 @@ def predict():
 
             prediction = "Ham"
 
+            category = "✅ Legitimate Message"
+
             advice = [
                 "This message appears legitimate.",
                 "Always verify sensitive requests independently.",
                 "Be cautious when sharing personal information."
             ]
 
+        # -------------------------
+        # Prediction History
+        # -------------------------
+
+        history.insert(0, {
+            "message": (
+                message[:50] + "..."
+                if len(message) > 50
+                else message
+            ),
+            "prediction": prediction
+        })
+
+        history[:] = history[:5]
+
+        # -------------------------
+        # Render Template
+        # -------------------------
+
         return render_template(
             "index.html",
             prediction=prediction,
             confidence=confidence,
+            category=category,
             advice=advice,
             word_count=word_count,
-            char_count=char_count
+            char_count=char_count,
+            history=history,
+            accuracy=ACCURACY,
+            precision=PRECISION,
+            recall=RECALL,
+            f1=F1_SCORE
         )
 
     except Exception as e:
+
         return f"Error: {str(e)}"
 
 # -------------------------

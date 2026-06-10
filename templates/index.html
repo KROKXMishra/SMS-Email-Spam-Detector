@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -19,15 +20,39 @@
 
     <div class="container">
 
-        <div class="logo">
-            🛡️
-        </div>
+        <div class="logo">🛡️</div>
 
         <h1>SMS & Email Spam Detector</h1>
 
         <p class="subtitle">
             AI-Powered Spam Detection using Machine Learning & NLP
         </p>
+
+        <!-- Metrics Dashboard -->
+
+        <div class="metrics">
+
+            <div class="metric-card">
+                <h3>Accuracy</h3>
+                <p>{{ accuracy }}%</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Precision</h3>
+                <p>{{ precision }}%</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>Recall</h3>
+                <p>{{ recall }}%</p>
+            </div>
+
+            <div class="metric-card">
+                <h3>F1 Score</h3>
+                <p>{{ f1 }}%</p>
+            </div>
+
+        </div>
 
         <form action="/predict" method="POST">
 
@@ -56,9 +81,14 @@
                 Confidence: {{ confidence }}%
             </div>
 
+            <div class="category">
+                {{ category }}
+            </div>
+
         </div>
 
         <div class="stats">
+
             <div class="stat-card">
                 <span>{{ word_count }}</span>
                 <p>Words</p>
@@ -68,6 +98,7 @@
                 <span>{{ char_count }}</span>
                 <p>Characters</p>
             </div>
+
         </div>
 
         {% if advice %}
@@ -86,8 +117,37 @@
 
         {% endif %}
 
+        {% if history %}
+
+        <div class="history">
+
+            <h3>🕒 Recent Predictions</h3>
+
+            <table>
+
+                <tr>
+                    <th>Message</th>
+                    <th>Result</th>
+                </tr>
+
+                {% for item in history %}
+
+                <tr>
+                    <td>{{ item.message }}</td>
+                    <td>{{ item.prediction }}</td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        </div>
+
+        {% endif %}
+
     </div>
 
 </body>
 
 </html>
+```
