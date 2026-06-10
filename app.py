@@ -1,9 +1,10 @@
+
 import os
 import pickle
 import nltk
 import string
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import wordpunct_tokenize
@@ -22,6 +23,7 @@ except LookupError:
 # ==================================
 
 app = Flask(__name__)
+app.secret_key = "spam_detector_secret_key"
 
 ps = PorterStemmer()
 
@@ -45,12 +47,6 @@ ACCURACY = 97.29
 PRECISION = 99.16
 RECALL = 81.38
 F1_SCORE = 89.39
-
-# ==================================
-# Prediction History
-# ==================================
-
-history = []
 
 # ==================================
 # Text Preprocessing
@@ -131,7 +127,7 @@ def home():
         precision=PRECISION,
         recall=RECALL,
         f1=F1_SCORE,
-        history=history
+        history=session.get("history", [])
     )
 
 # ==================================
@@ -159,7 +155,39 @@ def predict():
             2
         )
 
+        # ==================================
+        # Rule-Based Spam Detection
+        # ==================================
+
+        suspicious_words = [
+            "otp",
+            "bank account",
+            "verify",
+            "password",
+            "click",
+            "login",
+            "winner",
+            "lottery",
+            "prize"
+        ]
+
+        text_lower = message.lower()
+
+        for word in suspicious_words:
+            if word in text_lower:
+                prediction_value = 1
+                confidence = max(confidence, 95.0)
+                break
+
+        # ==================================
+        # Category Detection
+        # ==================================
+
         category = detect_category(message)
+
+        # ==================================
+        # Final Prediction
+        # ==================================
 
         if prediction_value == 1:
 
@@ -183,6 +211,12 @@ def predict():
                 "Be cautious before sharing personal information."
             ]
 
+        # ==================================
+        # Session History (Last 5 Only)
+        # ==================================
+
+        history = session.get("history", [])
+
         history.insert(
             0,
             {
@@ -191,11 +225,18 @@ def predict():
                     if len(message) > 80
                     else message
                 ),
-                "prediction": prediction
+                "prediction": prediction,
+                "confidence": confidence
             }
         )
 
-        del history[10:]
+        history = history[:5]
+
+        session["history"] = history
+
+        # ==================================
+        # Render Template
+        # ==================================
 
         return render_template(
             "index.html",
