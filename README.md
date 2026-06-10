@@ -1,39 +1,23 @@
 # SMS & Email Spam Detector
 
-A Machine Learning-powered web application that detects spam SMS messages and emails using NLP, TF-IDF Vectorization, and Multinomial Naive Bayes.
+A Machine Learning web application that classifies SMS and Email messages as Spam or Ham using NLP and Naive Bayes.
 
 ## Features
-
-- SMS Spam Detection
-- Email Spam Detection
+- Spam/Ham Detection
+- Confidence Score
 - NLP Text Preprocessing
-- TF-IDF Vectorization
-- Multinomial Naive Bayes Classifier
-- Confidence Score Display
-- Security Recommendations
-- Modern Glassmorphism UI
-- Flask Web Application
+- Glassmorphism UI
+- Deployed on Render
 
 ## Tech Stack
-
 - Python
 - Flask
 - Scikit-Learn
 - NLTK
-- HTML
-- CSS
-- JavaScript
+- HTML/CSS
 
-## Project Structure
-
-```text
-app.py
-templates/
-static/
-model.pkl
-vectorizer.pkl
-```
+## Live Demo
+https://sms-email-spam-detector-5430.onrender.com
 
 ## Author
-
 Kallol Mishra
