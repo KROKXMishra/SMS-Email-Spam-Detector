@@ -8,20 +8,31 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
 # -------------------------
-# NLTK Setup
+# Download NLTK resources
 # -------------------------
 
-ps = PorterStemmer()
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
 
-# Uncomment only first time if needed
-# nltk.download('punkt')
-# nltk.download('stopwords')
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 # -------------------------
 # Flask App
 # -------------------------
 
 app = Flask(__name__)
+
+ps = PorterStemmer()
 
 # -------------------------
 # Load Model Files
@@ -56,8 +67,10 @@ def transform_text(text):
     text = y[:]
     y.clear()
 
+    stop_words = set(stopwords.words('english'))
+
     for word in text:
-        if word not in stopwords.words('english') and word not in string.punctuation:
+        if word not in stop_words and word not in string.punctuation:
             y.append(word)
 
     text = y[:]
@@ -69,16 +82,12 @@ def transform_text(text):
     return " ".join(y)
 
 # -------------------------
-# Home Route
+# Routes
 # -------------------------
 
 @app.route('/')
 def home():
     return render_template('index.html')
-
-# -------------------------
-# Prediction Route
-# -------------------------
 
 @app.route('/predict', methods=['POST'])
 def predict():
