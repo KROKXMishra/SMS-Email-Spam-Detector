@@ -6,20 +6,11 @@ import string
 from flask import Flask, render_template, request
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import wordpunct_tokenize
 
 # -------------------------
-# Download NLTK resources
+# Download NLTK Resources
 # -------------------------
-
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-
-try:
-    nltk.data.find('tokenizers/punkt_tab')
-except LookupError:
-    nltk.download('punkt_tab')
 
 try:
     nltk.data.find('corpora/stopwords')
@@ -40,13 +31,11 @@ ps = PorterStemmer()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-model = pickle.load(
-    open(os.path.join(BASE_DIR, "model.pkl"), "rb")
-)
+with open(os.path.join(BASE_DIR, "model.pkl"), "rb") as f:
+    model = pickle.load(f)
 
-vectorizer = pickle.load(
-    open(os.path.join(BASE_DIR, "vectorizer.pkl"), "rb")
-)
+with open(os.path.join(BASE_DIR, "vectorizer.pkl"), "rb") as f:
+    vectorizer = pickle.load(f)
 
 # -------------------------
 # Text Preprocessing
@@ -56,7 +45,8 @@ def transform_text(text):
 
     text = text.lower()
 
-    text = nltk.word_tokenize(text)
+    # No punkt / punkt_tab needed
+    text = wordpunct_tokenize(text)
 
     y = []
 
@@ -92,52 +82,56 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
 
-    message = request.form['message']
+    try:
+        message = request.form['message']
 
-    word_count = len(message.split())
-    char_count = len(message)
+        word_count = len(message.split())
+        char_count = len(message)
 
-    transformed = transform_text(message)
+        transformed = transform_text(message)
 
-    vector = vectorizer.transform([transformed])
+        vector = vectorizer.transform([transformed])
 
-    result = model.predict(vector)[0]
+        result = model.predict(vector)[0]
 
-    confidence = round(
-        max(model.predict_proba(vector)[0]) * 100,
-        2
-    )
+        confidence = round(
+            max(model.predict_proba(vector)[0]) * 100,
+            2
+        )
 
-    if result == 1:
+        if result == 1:
 
-        prediction = "Spam"
+            prediction = "Spam"
 
-        advice = [
-            "Do not click suspicious links.",
-            "Never share OTP, passwords, or bank details.",
-            "Verify the sender using official channels.",
-            "Block and report suspicious senders.",
-            "Delete messages requesting urgent payments."
-        ]
+            advice = [
+                "Do not click suspicious links.",
+                "Never share OTP, passwords, or bank details.",
+                "Verify the sender using official channels.",
+                "Block and report suspicious senders.",
+                "Delete messages requesting urgent payments."
+            ]
 
-    else:
+        else:
 
-        prediction = "Ham"
+            prediction = "Ham"
 
-        advice = [
-            "This message appears legitimate.",
-            "Always verify sensitive requests independently.",
-            "Be cautious when sharing personal information."
-        ]
+            advice = [
+                "This message appears legitimate.",
+                "Always verify sensitive requests independently.",
+                "Be cautious when sharing personal information."
+            ]
 
-    return render_template(
-        "index.html",
-        prediction=prediction,
-        confidence=confidence,
-        advice=advice,
-        word_count=word_count,
-        char_count=char_count
-    )
+        return render_template(
+            "index.html",
+            prediction=prediction,
+            confidence=confidence,
+            advice=advice,
+            word_count=word_count,
+            char_count=char_count
+        )
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # -------------------------
 # Run App
