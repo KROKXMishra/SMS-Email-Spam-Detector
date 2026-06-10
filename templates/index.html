@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS & Email Spam Detector</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+
+    <div class="container">
+
+        <div class="logo">
+            🛡️
+        </div>
+
+        <h1>SMS & Email Spam Detector</h1>
+
+        <p class="subtitle">
+            AI-Powered Spam Detection using Machine Learning & NLP
+        </p>
+
+        <form action="/predict" method="POST">
+
+            <textarea
+                name="message"
+                placeholder="Paste your SMS or Email here..."
+                required></textarea>
+
+            <button type="submit">
+                Analyze Message
+            </button>
+
+        </form>
+
+        {% if prediction %}
+
+        <div class="result {% if prediction == 'Spam' %}spam{% else %}ham{% endif %}">
+
+            {% if prediction == 'Spam' %}
+            🚨 Spam Detected
+            {% else %}
+            ✅ Safe Message
+            {% endif %}
+
+            <div class="confidence">
+                Confidence: {{ confidence }}%
+            </div>
+
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span>{{ word_count }}</span>
+                <p>Words</p>
+            </div>
+
+            <div class="stat-card">
+                <span>{{ char_count }}</span>
+                <p>Characters</p>
+            </div>
+        </div>
+
+        {% if advice %}
+        <div class="tips">
+
+            <h3>🛡️ Security Recommendations</h3>
+
+            <ul>
+                {% for tip in advice %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+        {% endif %}
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>
