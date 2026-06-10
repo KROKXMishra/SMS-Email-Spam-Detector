@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,15 +20,30 @@
 
     <div class="container">
 
-        <div class="logo">🛡️</div>
+        <!-- Hero Section -->
 
-        <h1>SMS & Email Spam Detector</h1>
+        <div class="hero">
 
-        <p class="subtitle">
-            AI-Powered Spam Detection using Machine Learning & NLP
-        </p>
+            <div class="logo">
+                🛡️
+            </div>
 
-        <!-- Metrics Dashboard -->
+            <h1>SMS & Email Spam Detector</h1>
+
+            <p class="subtitle">
+                AI-Powered Spam Detection using Machine Learning & NLP
+            </p>
+
+            <div class="hero-tags">
+                <span>📧 Email Detection</span>
+                <span>📱 SMS Detection</span>
+                <span>🤖 NLP</span>
+                <span>⚡ Real-Time</span>
+            </div>
+
+        </div>
+
+        <!-- Metrics -->
 
         <div class="metrics">
 
@@ -54,6 +69,8 @@
 
         </div>
 
+        <!-- Form -->
+
         <form action="/predict" method="POST">
 
             <textarea
@@ -66,6 +83,8 @@
             </button>
 
         </form>
+
+        <!-- Prediction Result -->
 
         {% if prediction %}
 
@@ -87,6 +106,8 @@
 
         </div>
 
+        <!-- Stats -->
+
         <div class="stats">
 
             <div class="stat-card">
@@ -101,7 +122,10 @@
 
         </div>
 
+        <!-- Recommendations -->
+
         {% if advice %}
+
         <div class="tips">
 
             <h3>🛡️ Security Recommendations</h3>
@@ -113,33 +137,46 @@
             </ul>
 
         </div>
+
         {% endif %}
 
         {% endif %}
+
+        <!-- History -->
 
         {% if history %}
 
         <div class="history">
 
-            <h3>🕒 Recent Predictions</h3>
+            <h3 class="history-title">
+                📜 Prediction History
+            </h3>
 
-            <table>
-
-                <tr>
-                    <th>Message</th>
-                    <th>Result</th>
-                </tr>
+            <div class="history-list">
 
                 {% for item in history %}
 
-                <tr>
-                    <td>{{ item.message }}</td>
-                    <td>{{ item.prediction }}</td>
-                </tr>
+                <div class="history-item">
+
+                    <div class="history-message">
+                        {{ item.message }}
+                    </div>
+
+                    <div class="history-result {% if item.prediction == 'Spam' %}history-spam{% else %}history-ham{% endif %}">
+
+                        {% if item.prediction == 'Spam' %}
+                        🔴 Spam
+                        {% else %}
+                        🟢 Ham
+                        {% endif %}
+
+                    </div>
+
+                </div>
 
                 {% endfor %}
 
-            </table>
+            </div>
 
         </div>
 
@@ -150,4 +187,4 @@
 </body>
 
 </html>
-```
+

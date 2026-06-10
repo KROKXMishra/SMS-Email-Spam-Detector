@@ -8,39 +8,26 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import wordpunct_tokenize
 
-# -------------------------
-# Download NLTK Resources
-# -------------------------
+# ==================================
+# NLTK Setup
+# ==================================
 
 try:
-    nltk.data.find('corpora/stopwords')
+    nltk.data.find("corpora/stopwords")
 except LookupError:
-    nltk.download('stopwords')
+    nltk.download("stopwords")
 
-# -------------------------
+# ==================================
 # Flask App
-# -------------------------
+# ==================================
 
 app = Flask(__name__)
 
-# -------------------------
-# Global Variables
-# -------------------------
-
 ps = PorterStemmer()
 
-STOP_WORDS = set(stopwords.words('english'))
-
-history = []
-
-ACCURACY = 97.29
-PRECISION = 99.16
-RECALL = 81.38
-F1_SCORE = 89.39
-
-# -------------------------
-# Load Model Files
-# -------------------------
+# ==================================
+# Model Loading
+# ==================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,9 +37,24 @@ with open(os.path.join(BASE_DIR, "model.pkl"), "rb") as f:
 with open(os.path.join(BASE_DIR, "vectorizer.pkl"), "rb") as f:
     vectorizer = pickle.load(f)
 
-# -------------------------
+# ==================================
+# Model Metrics
+# ==================================
+
+ACCURACY = 97.29
+PRECISION = 99.16
+RECALL = 81.38
+F1_SCORE = 89.39
+
+# ==================================
+# Prediction History
+# ==================================
+
+history = []
+
+# ==================================
 # Text Preprocessing
-# -------------------------
+# ==================================
 
 def transform_text(text):
 
@@ -60,32 +62,67 @@ def transform_text(text):
 
     text = wordpunct_tokenize(text)
 
-    y = []
+    words = []
 
     for word in text:
         if word.isalnum():
-            y.append(word)
+            words.append(word)
 
-    text = y[:]
-    y.clear()
+    stop_words = set(stopwords.words("english"))
 
-    for word in text:
-        if word not in STOP_WORDS and word not in string.punctuation:
-            y.append(word)
+    filtered = []
 
-    text = y[:]
-    y.clear()
+    for word in words:
+        if word not in stop_words and word not in string.punctuation:
+            filtered.append(word)
 
-    for word in text:
-        y.append(ps.stem(word))
+    stemmed = []
 
-    return " ".join(y)
+    for word in filtered:
+        stemmed.append(ps.stem(word))
 
-# -------------------------
-# Routes
-# -------------------------
+    return " ".join(stemmed)
 
-@app.route('/')
+# ==================================
+# Spam Category Detection
+# ==================================
+
+def detect_category(text):
+
+    text = text.lower()
+
+    if any(word in text for word in [
+        "bank", "account", "otp",
+        "verify", "payment",
+        "credit card", "debit card"
+    ]):
+        return "🏦 Financial Scam"
+
+    elif any(word in text for word in [
+        "lottery", "winner", "won",
+        "prize", "reward"
+    ]):
+        return "🎁 Lottery Scam"
+
+    elif any(word in text for word in [
+        "click", "link", "login",
+        "password", "update"
+    ]):
+        return "🎣 Phishing Attempt"
+
+    elif any(word in text for word in [
+        "offer", "sale", "discount",
+        "deal", "free"
+    ]):
+        return "🛍 Promotional Spam"
+
+    return "📩 General Message"
+
+# ==================================
+# Home
+# ==================================
+
+@app.route("/")
 def home():
 
     return render_template(
@@ -97,12 +134,16 @@ def home():
         history=history
     )
 
-@app.route('/predict', methods=['POST'])
+# ==================================
+# Prediction Route
+# ==================================
+
+@app.route("/predict", methods=["POST"])
 def predict():
 
     try:
 
-        message = request.form['message']
+        message = request.form["message"]
 
         word_count = len(message.split())
         char_count = len(message)
@@ -111,73 +152,50 @@ def predict():
 
         vector = vectorizer.transform([transformed])
 
-        result = model.predict(vector)[0]
+        prediction_value = model.predict(vector)[0]
 
         confidence = round(
             max(model.predict_proba(vector)[0]) * 100,
             2
         )
 
-        msg = message.lower()
+        category = detect_category(message)
 
-        # -------------------------
-        # Spam Category Detection
-        # -------------------------
-
-        if result == 1:
+        if prediction_value == 1:
 
             prediction = "Spam"
 
-            if any(word in msg for word in ["otp", "bank", "account", "verify"]):
-                category = "🏦 Banking Scam"
-
-            elif any(word in msg for word in ["winner", "won", "lottery", "prize"]):
-                category = "🎁 Lottery Scam"
-
-            elif any(word in msg for word in ["click", "link", "login"]):
-                category = "🎣 Phishing"
-
-            else:
-                category = "📢 Promotional Spam"
-
             advice = [
                 "Do not click suspicious links.",
-                "Never share OTP, passwords, or bank details.",
-                "Verify the sender using official channels.",
-                "Block and report suspicious senders.",
-                "Delete messages requesting urgent payments."
+                "Never share OTP or passwords.",
+                "Verify the sender independently.",
+                "Report suspicious messages.",
+                "Delete messages demanding urgent payment."
             ]
 
         else:
 
             prediction = "Ham"
 
-            category = "✅ Legitimate Message"
-
             advice = [
                 "This message appears legitimate.",
-                "Always verify sensitive requests independently.",
-                "Be cautious when sharing personal information."
+                "Always verify sensitive requests.",
+                "Be cautious before sharing personal information."
             ]
 
-        # -------------------------
-        # Prediction History
-        # -------------------------
+        history.insert(
+            0,
+            {
+                "message": (
+                    message[:80] + "..."
+                    if len(message) > 80
+                    else message
+                ),
+                "prediction": prediction
+            }
+        )
 
-        history.insert(0, {
-            "message": (
-                message[:50] + "..."
-                if len(message) > 50
-                else message
-            ),
-            "prediction": prediction
-        })
-
-        history[:] = history[:5]
-
-        # -------------------------
-        # Render Template
-        # -------------------------
+        del history[10:]
 
         return render_template(
             "index.html",
@@ -198,9 +216,9 @@ def predict():
 
         return f"Error: {str(e)}"
 
-# -------------------------
+# ==================================
 # Run App
-# -------------------------
+# ==================================
 
 if __name__ == "__main__":
     app.run(debug=True)
