@@ -156,34 +156,13 @@ def predict():
         )
 
         # ==================================
-        # Rule-Based Spam Detection
-        # ==================================
-
-        suspicious_words = [
-            "otp",
-            "bank account",
-            "verify",
-            "password",
-            "click",
-            "login",
-            "winner",
-            "lottery",
-            "prize"
-        ]
-
-        text_lower = message.lower()
-
-        for word in suspicious_words:
-            if word in text_lower:
-                prediction_value = 1
-                confidence = max(confidence, 95.0)
-                break
-
-        # ==================================
         # Category Detection
         # ==================================
 
-        category = detect_category(message)
+        if prediction_value == 1:
+            category = detect_category(message)
+        else:
+            category = ""
 
         # ==================================
         # Final Prediction
