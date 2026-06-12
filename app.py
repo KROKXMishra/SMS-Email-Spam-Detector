@@ -1,10 +1,16 @@
-
 import os
 import pickle
 import nltk
 import string
 
-from flask import Flask, render_template, request, session
+from flask import (
+    Flask,
+    render_template,
+    request,
+    session,
+    jsonify
+)
+
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import wordpunct_tokenize
@@ -131,7 +137,7 @@ def home():
     )
 
 # ==================================
-# Prediction Route
+# Website Prediction Route
 # ==================================
 
 @app.route("/predict", methods=["POST"])
@@ -155,18 +161,10 @@ def predict():
             2
         )
 
-        # ==================================
-        # Category Detection
-        # ==================================
-
         if prediction_value == 1:
             category = detect_category(message)
         else:
             category = ""
-
-        # ==================================
-        # Final Prediction
-        # ==================================
 
         if prediction_value == 1:
 
@@ -190,10 +188,6 @@ def predict():
                 "Be cautious before sharing personal information."
             ]
 
-        # ==================================
-        # Session History (Last 5 Only)
-        # ==================================
-
         history = session.get("history", [])
 
         history.insert(
@@ -213,10 +207,6 @@ def predict():
 
         session["history"] = history
 
-        # ==================================
-        # Render Template
-        # ==================================
-
         return render_template(
             "index.html",
             prediction=prediction,
@@ -235,6 +225,52 @@ def predict():
     except Exception as e:
 
         return f"Error: {str(e)}"
+
+# ==================================
+# API Route For Chrome Extension
+# ==================================
+
+@app.route("/api/predict", methods=["POST"])
+def api_predict():
+
+    try:
+
+        data = request.get_json()
+
+        message = data["message"]
+
+        transformed = transform_text(message)
+
+        vector = vectorizer.transform([transformed])
+
+        prediction_value = model.predict(vector)[0]
+
+        confidence = round(
+            max(model.predict_proba(vector)[0]) * 100,
+            2
+        )
+
+        category = ""
+
+        if prediction_value == 1:
+            category = detect_category(message)
+
+        return jsonify({
+            "prediction":
+                "Spam"
+                if prediction_value == 1
+                else "Ham",
+
+            "confidence": confidence,
+
+            "category": category
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        })
 
 # ==================================
 # Run App
