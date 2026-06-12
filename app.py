@@ -4,7 +4,7 @@ import nltk
 import string
 
 from flask import Flask, render_template, request, session, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
@@ -25,7 +25,10 @@ except LookupError:
 app = Flask(__name__)
 app.secret_key = "spam_detector_secret_key"
 
-CORS(app)
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}}
+)
 
 ps = PorterStemmer()
 
@@ -226,14 +229,18 @@ def predict():
 # API Route For Chrome Extension
 # ==================================
 
-@app.route("/api/predict", methods=["POST"])
+@app.route("/api/predict", methods=["POST", "OPTIONS"])
+@cross_origin(origins="*")
 def api_predict():
 
     try:
 
+        if request.method == "OPTIONS":
+            return jsonify({"status": "ok"}), 200
+
         data = request.get_json()
 
-        message = data["message"]
+        message = data.get("message", "")
 
         transformed = transform_text(message)
 
@@ -266,7 +273,7 @@ def api_predict():
 
         return jsonify({
             "error": str(e)
-        })
+        }), 500
 
 # ==================================
 # Run App
