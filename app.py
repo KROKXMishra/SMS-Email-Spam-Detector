@@ -3,18 +3,12 @@ import pickle
 import nltk
 import string
 
-from flask import (
-    Flask,
-    render_template,
-    request,
-    session,
-    jsonify
-)
+from flask import Flask, render_template, request, session, jsonify
+from flask_cors import CORS
 
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import wordpunct_tokenize
-
 # ==================================
 # NLTK Setup
 # ==================================
@@ -30,6 +24,8 @@ except LookupError:
 
 app = Flask(__name__)
 app.secret_key = "spam_detector_secret_key"
+
+CORS(app)
 
 ps = PorterStemmer()
 
